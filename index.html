@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura - Your AI Emotional Support Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #chat-window::-webkit-scrollbar { width: 8px; }
+        #chat-window::-webkit-scrollbar-track { background: #f1f5f9; }
+        #chat-window::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        #chat-window::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .dot { animation: bounce 1.2s infinite ease-in-out; }
+        .dot:nth-child(2) { animation-delay: -0.15s; }
+        .dot:nth-child(3) { animation-delay: -0.3s; }
+        .listening { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen">
+
+    <!-- Disclaimer Modal -->
+    <div id="disclaimer-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all scale-95 opacity-0" id="disclaimer-content">
+            <svg class="w-16 h-16 text-amber-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Important Notice</h2>
+            <p class="text-slate-600 mb-6">Aura is an AI companion for supportive conversations, not a substitute for professional mental health care.</p>
+            <p class="text-slate-600 mb-8 font-semibold">If you are in a crisis, please seek help immediately.</p>
+            <button id="accept-disclaimer" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-transform duration-200 hover:scale-105">I Understand and Accept</button>
+        </div>
+    </div>
+
+    <!-- Main Chat Application -->
+    <div id="chat-container" class="w-full max-w-2xl h-[95vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden opacity-0 transition-opacity duration-500">
+        <header class="bg-slate-800 text-white p-4 flex justify-between items-center shadow-md z-10">
+            <div>
+                <h1 class="text-xl font-bold">Aura</h1>
+                <p class="text-sm text-slate-300">Your AI Emotional Support Companion</p>
+            </div>
+            <button id="copy-chat-btn" title="Copy Conversation" class="p-2 rounded-full hover:bg-slate-700 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+        </header>
+        <div id="chat-window" class="flex-1 p-6 overflow-y-auto space-y-6"></div>
+        <div id="typing-indicator" class="hidden p-6 pt-0">
+            <div class="flex items-center space-x-2">
+                <div class="w-10 h-10 rounded-full bg-indigo-500 flex-shrink-0"></div>
+                <div class="bg-slate-200 rounded-2xl p-3"><div class="flex items-center space-x-1"><div class="dot w-2 h-2 bg-slate-500 rounded-full"></div><div class="dot w-2 h-2 bg-slate-500 rounded-full"></div><div class="dot w-2 h-2 bg-slate-500 rounded-full"></div></div></div>
+            </div>
+        </div>
+        <footer class="p-4 bg-white border-t border-slate-200">
+            <form id="message-form" class="flex items-center space-x-2">
+                <input type="text" id="message-input" placeholder="Type or press the mic to talk..." autocomplete="off" class="flex-1 w-full px-4 py-3 bg-slate-100 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                <button id="mic-btn" type="button" class="bg-slate-200 text-slate-600 p-3 rounded-full hover:bg-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-colors shrink-0"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"></path></svg></button>
+                <button type="submit" class="bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-transform duration-200 hover:scale-110 shrink-0"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></button>
+            </form>
+        </footer>
+    </div>
+
+    <!-- NOTE: Firebase is removed from the frontend. Chat history will be managed by the browser's localStorage for simplicity in this example. -->
+    <!-- For a production app, you would manage history in a database via the backend. -->
+    <script>
+        // --- DOM ELEMENTS ---
+        const disclaimerModal = document.getElementById('disclaimer-modal');
+        const disclaimerContent = document.getElementById('disclaimer-content');
+        const acceptDisclaimerBtn = document.getElementById('accept-disclaimer');
+        const chatContainer = document.getElementById('chat-container');
+        const chatWindow = document.getElementById('chat-window');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const copyChatBtn = document.getElementById('copy-chat-btn');
+        const micBtn = document.getElementById('mic-btn');
+
+        // --- STATE & CONFIG ---
+        let conversationHistory = [];
+        const originalPlaceholder = "Type or press the mic to talk...";
+
+        // --- SPEECH API ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        if(SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+        } else {
+            micBtn.style.display = 'none';
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            disclaimerContent.style.transform = 'scale(1)';
+            disclaimerContent.style.opacity = '1';
+            loadChatHistory();
+        };
+        
+        // --- EVENT LISTENERS ---
+        acceptDisclaimerBtn.addEventListener('click', () => {
+            disclaimerModal.classList.add('hidden');
+            chatContainer.style.opacity = '1';
+            if (conversationHistory.length === 0) {
+                 const welcomeText = "Hello, I'm Aura. Thank you for being here. How are you feeling today?";
+                 renderMessage('model', welcomeText, true);
+                 conversationHistory.push({ role: 'model', parts: [{ text: welcomeText }] });
+                 saveChatHistory();
+            }
+        });
+
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userMessage = messageInput.value.trim();
+            if (userMessage) {
+                messageInput.value = '';
+                processUserMessage(userMessage);
+            }
+        });
+
+        if (SpeechRecognition) {
+            micBtn.addEventListener('click', () => {
+                if (isListening) {
+                    recognition.stop();
+                } else {
+                    window.speechSynthesis.cancel();
+                    recognition.start();
+                }
+            });
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                messageInput.value = transcript;
+                messageForm.dispatchEvent(new Event('submit', { bubbles: true }));
+            };
+
+            recognition.onstart = () => {
+                isListening = true;
+                micBtn.classList.add('listening', 'bg-red-500', 'text-white');
+                messageInput.placeholder = "Listening...";
+            };
+            recognition.onend = () => {
+                isListening = false;
+                micBtn.classList.remove('listening', 'bg-red-500', 'text-white');
+                messageInput.placeholder = originalPlaceholder;
+            };
+            recognition.onerror = (event) => renderMessage('system', `Speech recognition error: ${event.error}`);
+        }
+
+        // --- CORE LOGIC ---
+        function processUserMessage(message) {
+            window.speechSynthesis.cancel(); 
+            renderMessage('user', message);
+            conversationHistory.push({ role: 'user', parts: [{ text: message }] });
+            saveChatHistory();
+
+            if (checkForCrisis(message)) {
+                const crisisText = "It sounds like you are going through a very difficult time. Please reach out to a crisis hotline or a mental health professional. Help is available. You can call or text 988 in the US and Canada, or 111 in the UK.";
+                renderMessage('system-crisis', crisisText, true);
+                conversationHistory.push({ role: 'model', parts: [{ text: crisisText }] });
+                saveChatHistory();
+                return;
+            }
+
+            typingIndicator.classList.remove('hidden');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            getAIResponse();
+        }
+
+        async function getAIResponse() {
+            try {
+                // ***MODIFICATION: Call our own backend instead of Google's API directly***
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ history: conversationHistory })
+                });
+
+                if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
+
+                const result = await response.json();
+                const aiText = result.response;
+                
+                renderMessage('model', aiText, true);
+                conversationHistory.push({ role: 'model', parts: [{ text: aiText }] });
+                saveChatHistory();
+
+            } catch (error) {
+                console.error("Error fetching AI response:", error);
+                renderMessage('system', 'Sorry, I could not connect to the server. Please try again.');
+            } finally {
+                typingIndicator.classList.add('hidden');
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+        }
+
+        // --- UI & UTILITY FUNCTIONS ---
+        function renderMessage(sender, text, shouldSpeak = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start gap-3';
+            let bubbleColor, textColor, avatarContent;
+
+            switch (sender) {
+                case 'user':
+                    bubbleColor = 'bg-indigo-600'; textColor = 'text-white';
+                    avatarContent = `<div class="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center font-bold text-slate-600 flex-shrink-0">YOU</div>`;
+                    messageDiv.classList.add('flex-row-reverse');
+                    break;
+                case 'system':
+                    messageDiv.innerHTML = `<div class="text-center w-full my-2"><p class="text-sm text-rose-800 bg-rose-100 inline-block px-3 py-1 rounded-full">${text}</p></div>`;
+                    chatWindow.appendChild(messageDiv); return;
+                case 'system-crisis':
+                    bubbleColor = 'bg-red-500'; textColor = 'text-white';
+                    avatarContent = `<div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div>`;
+                    break;
+                default: // model
+                    bubbleColor = 'bg-slate-200'; textColor = 'text-slate-800';
+                    avatarContent = `<div class="w-10 h-10 rounded-full bg-indigo-500 flex-shrink-0"></div>`;
+                    break;
+            }
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.className = `max-w-xs sm:max-w-md p-4 rounded-2xl ${bubbleColor} ${textColor}`;
+            messageBubble.textContent = text;
+            messageDiv.innerHTML = avatarContent;
+            messageDiv.appendChild(messageBubble);
+
+            if (sender === 'model' || sender === 'system-crisis') {
+                const speakerBtn = document.createElement('button');
+                speakerBtn.className = 'self-center ml-2 text-slate-400 hover:text-indigo-500 transition-colors';
+                speakerBtn.title = 'Play audio again';
+                speakerBtn.innerHTML = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.414z"></path></svg>`;
+                speakerBtn.onclick = () => speakText(text);
+                messageDiv.appendChild(speakerBtn);
+            }
+
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            if (shouldSpeak) speakText(text);
+        }
+
+        function checkForCrisis(text) {
+            const crisisKeywords = ['suicide', 'kill myself', 'want to die', 'self harm', 'self-harm', 'ending it all', 'can\'t go on'];
+            return crisisKeywords.some(keyword => text.toLowerCase().includes(keyword));
+        }
+        
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function saveChatHistory() {
+            localStorage.setItem('auraChatHistory', JSON.stringify(conversationHistory));
+        }
+
+        function loadChatHistory() {
+            const savedHistory = localStorage.getItem('auraChatHistory');
+            if (savedHistory) {
+                conversationHistory = JSON.parse(savedHistory);
+                chatWindow.innerHTML = '';
+                conversationHistory.forEach(entry => renderMessage(entry.role, entry.parts[0].text));
+            }
+        }
+    </script>
+</body>
+</html>

@@ -64,10 +64,7 @@
         </footer>
     </div>
 
-    <!-- NOTE: Firebase is removed from the frontend. Chat history will be managed by the browser's localStorage for simplicity in this example. -->
-    <!-- For a production app, you would manage history in a database via the backend. -->
     <script>
-        // --- DOM ELEMENTS ---
         const disclaimerModal = document.getElementById('disclaimer-modal');
         const disclaimerContent = document.getElementById('disclaimer-content');
         const acceptDisclaimerBtn = document.getElementById('accept-disclaimer');
@@ -79,11 +76,9 @@
         const copyChatBtn = document.getElementById('copy-chat-btn');
         const micBtn = document.getElementById('mic-btn');
 
-        // --- STATE & CONFIG ---
         let conversationHistory = [];
         const originalPlaceholder = "Type or press the mic to talk...";
 
-        // --- SPEECH API ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let isListening = false;
@@ -96,22 +91,20 @@
             micBtn.style.display = 'none';
         }
 
-        // --- INITIALIZATION ---
         window.onload = () => {
             disclaimerContent.style.transform = 'scale(1)';
             disclaimerContent.style.opacity = '1';
             loadChatHistory();
         };
         
-        // --- EVENT LISTENERS ---
         acceptDisclaimerBtn.addEventListener('click', () => {
             disclaimerModal.classList.add('hidden');
             chatContainer.style.opacity = '1';
             if (conversationHistory.length === 0) {
-                 const welcomeText = "Hello, I'm Aura. Thank you for being here. How are you feeling today?";
-                 renderMessage('model', welcomeText, true);
-                 conversationHistory.push({ role: 'model', parts: [{ text: welcomeText }] });
-                 saveChatHistory();
+                const welcomeText = "Hello, I'm Aura. Thank you for being here. How are you feeling today?";
+                renderMessage('model', welcomeText, true);
+                conversationHistory.push({ role: 'model', parts: [{ text: welcomeText }] });
+                saveChatHistory();
             }
         });
 
@@ -153,7 +146,6 @@
             recognition.onerror = (event) => renderMessage('system', `Speech recognition error: ${event.error}`);
         }
 
-        // --- CORE LOGIC ---
         function processUserMessage(message) {
             window.speechSynthesis.cancel(); 
             renderMessage('user', message);
@@ -175,7 +167,6 @@
 
         async function getAIResponse() {
             try {
-                // ***MODIFICATION: Call our own backend instead of Google's API directly***
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -200,7 +191,6 @@
             }
         }
 
-        // --- UI & UTILITY FUNCTIONS ---
         function renderMessage(sender, text, shouldSpeak = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'flex items-start gap-3';
